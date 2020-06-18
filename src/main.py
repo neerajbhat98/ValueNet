@@ -4,7 +4,7 @@ import os
 import torch
 from pytictoc import TicToc
 from torch.utils.tensorboard import SummaryWriter
-from tqdm.auto import tqdm
+from tqdm.notebook import tqdm
 
 from model.model import IRNet
 from config import read_arguments_train, write_config_to_file
