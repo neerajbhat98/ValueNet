@@ -1,5 +1,5 @@
-import torch
-from tqdm import tqdm
+ torch
+from tqdm.auto import tqdm
 
 from spider.example_builder import build_example
 

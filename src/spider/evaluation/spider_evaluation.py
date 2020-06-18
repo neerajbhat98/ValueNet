@@ -26,7 +26,7 @@ import traceback
 import argparse
 
 import wandb
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from spider.evaluation.process_sql import tokenize, get_schema, get_tables_with_alias, Schema, get_sql
 

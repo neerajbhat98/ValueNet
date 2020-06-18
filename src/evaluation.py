@@ -1,7 +1,7 @@
 import os
 
 import torch
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import json
 
 from config import read_arguments_evaluation
