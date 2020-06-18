@@ -17,7 +17,7 @@ from nltk.stem import WordNetLemmatizer
 wordnet_lemmatizer = WordNetLemmatizer()
 
 def lemma(x):
-    return wordnet_lemmatizer.lemmatize()
+    return wordnet_lemmatizer.lemmatize(x)
 
 
 def partial_match(query, table_name):
