@@ -13,9 +13,11 @@ import os
 import json
 import re as regex
 from nltk.stem import WordNetLemmatizer
-from pattern.text.en import lemma
 
 wordnet_lemmatizer = WordNetLemmatizer()
+
+def lemma(x):
+    return wordnet_lemmatizer.lemmatize()
 
 
 def partial_match(query, table_name):
