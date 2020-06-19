@@ -131,13 +131,15 @@ if __name__ == '__main__':
 
     with open(os.path.join(args.conceptNet, 'english_IsA.pkl'), 'rb') as f:
         is_a_concept = pickle.load(f)
-    
+    log = []
     while True:
-        log = {}
+        dict = {}
         _print_banner()
         question = input(colored(
             f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
-        log['question'] = question
+        dict['question'] = question
+        if(question == '`'):
+            break
         try:
 
             row = {
@@ -172,25 +174,27 @@ if __name__ == '__main__':
             print(colored(
                 f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
             print()
-            log['semQL'] = prediction['model_result']
+            dict['semQL'] = prediction['model_result']
 
             sql = _semql_to_sql(prediction, schemas_dict)
 
             print(
                 colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
             print()
-            log['sql'] = sql
+            dict['sql'] = sql
             result = _execute_query(sql, args.database_path)
-            log['result'] = []
+            dict['result'] = result
             print(f"Executed on the database '{args.database}'. Results: ")
             for row in result:
                 print(colored(row, 'green'))
-                log['result'].append(row)
 
-            with open('log_' + str(args.database) + '.txt', 'a') as f:
-                f.write(log)
+            log.append(dict)
+
         except Exception as e:
             print("Exception: " + str(e))
 
         input(colored(
             "Press [Enter] to continue with your next question.", 'red', attrs=['bold']))
+
+    with open('log_' + str(args.database) + '.json', 'w') as f:
+        json.dump(log, f, indent=4)
