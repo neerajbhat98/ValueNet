@@ -48,8 +48,8 @@ def _tokenize_question(tokenizer, question):
 
 
 def _pre_process_values(row):
-    ner_results = remote_named_entity_recognition(row['question'])
-    row['ner_extracted_values'] = ner_results['entities']
+    # ner_results = remote_named_entity_recognition(row['question'])
+    # row['ner_extracted_values'] = ner_results['entities']
 
     extracted_values = pre_process(row)
 

@@ -23,36 +23,47 @@ all_database_value_finder = {}
 
 def pre_process(entry):
 
-    extracted_data = NerExtractionData([], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
+    extracted_data = NerExtractionData(
+        [], [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 
-    extracted_data.heuristic_values_in_quote.extend(find_values_in_quote(entry['question']))
-    extracted_data.heuristic_ordinals.extend(find_ordinals(entry['question_toks']))
+    extracted_data.heuristic_values_in_quote.extend(
+        find_values_in_quote(entry['question']))
+    extracted_data.heuristic_ordinals.extend(
+        find_ordinals(entry['question_toks']))
     extracted_data.heuristics_emails.extend(find_emails(entry['question']))
-    extracted_data.heuristics_genders.extend(find_genders(entry['question_toks']))
-    extracted_data.heuristics_null_empty.extend(find_null_empty_values(entry['question_toks']))
-    extracted_data.heuristics_variety_common_mentionings.extend(find_variety_of_common_mentionings(entry['question_toks']))
-    extracted_data.heuristics_special_codes.extend(find_special_codes(entry['question']))
-    extracted_data.heuristics_single_letters.extend(find_single_letters(entry['question']))
-    extracted_data.heuristics_capitalized_words.extend(find_capitalized_words(entry['question']))
-    extracted_data.heuristics_months.extend(find_months(entry['question_toks']))
-    extracted_data.heuristics_location_abbreviations.extend(find_location_abbreviations(entry['question']))
+    extracted_data.heuristics_genders.extend(
+        find_genders(entry['question_toks']))
+    extracted_data.heuristics_null_empty.extend(
+        find_null_empty_values(entry['question_toks']))
+    extracted_data.heuristics_variety_common_mentionings.extend(
+        find_variety_of_common_mentionings(entry['question_toks']))
+    extracted_data.heuristics_special_codes.extend(
+        find_special_codes(entry['question']))
+    extracted_data.heuristics_single_letters.extend(
+        find_single_letters(entry['question']))
+    extracted_data.heuristics_capitalized_words.extend(
+        find_capitalized_words(entry['question']))
+    extracted_data.heuristics_months.extend(
+        find_months(entry['question_toks']))
+    extracted_data.heuristics_location_abbreviations.extend(
+        find_location_abbreviations(entry['question']))
 
-    for entity in entry['ner_extracted_values']:
-        # for all types see https://cloud.google.com/natural-language/docs/reference/rest/v1beta2/Entity#Type
-        # TODO: extend this pre-processing for e.g. ADDRESSES, PHONE_NUMBERS - see the link above.
-        if entity['type'] == 'NUMBER':
-            extracted_data.ner_numbers.append(_compose_number(entity))
-        elif entity['type'] == 'DATE':
-            extracted_data.ner_dates.extend(_compose_date(entity))
-        elif entity['type'] == 'PRICE':
-            extracted_data.ner_prices.append(_compose_price(entity))
-        else:
-            if len(entity['name'].split(' ')) == 1:
-                # just take the extracted value - without any adaptions
-                extracted_data.ner_remaining.append(entity['name'])
-            else:
-                # there are multiple words in this value - create combinations out of it.
-                extracted_data.ner_remaining.extend(_build_ngrams(entity['name']))
+    # for entity in entry['ner_extracted_values']:
+    # for all types see https://cloud.google.com/natural-language/docs/reference/rest/v1beta2/Entity#Type
+    # TODO: extend this pre-processing for e.g. ADDRESSES, PHONE_NUMBERS - see the link above.
+    # if entity['type'] == 'NUMBER':
+    #     extracted_data.ner_numbers.append(_compose_number(entity))
+    # elif entity['type'] == 'DATE':
+    #     extracted_data.ner_dates.extend(_compose_date(entity))
+    # elif entity['type'] == 'PRICE':
+    #     extracted_data.ner_prices.append(_compose_price(entity))
+    # else:
+    #     if len(entity['name'].split(' ')) == 1:
+    #         # just take the extracted value - without any adaptions
+    #         extracted_data.ner_remaining.append(entity['name'])
+    #     else:
+    #         # there are multiple words in this value - create combinations out of it.
+    #         extracted_data.ner_remaining.extend(_build_ngrams(entity['name']))
 
     return extracted_data
 
@@ -64,17 +75,24 @@ def match_values_in_database(db_id: str, extracted_data: NerExtractionData):
     # Remember: 1.0 is looking for exact matches only. Also remember: we do lower-case only comparison, so 'Male' and 'male' will match with 1.0
     candidates = []
     # With values in quote we are a bit tolerant. Important: we keep this values anyway, as the are often used in fuzzy LIKE searches.
-    _add_without_duplicates([(quote, 0.9) for quote in extracted_data.heuristic_values_in_quote], candidates)
+    _add_without_duplicates(
+        [(quote, 0.9) for quote in extracted_data.heuristic_values_in_quote], candidates)
     # Gender values we only want exact matches.
-    _add_without_duplicates([(gender, 1.0) for gender in extracted_data.heuristics_genders], candidates)
-    _add_without_duplicates([(common_mentionings, 0.9) for common_mentionings in extracted_data.heuristics_variety_common_mentionings], candidates)
+    _add_without_duplicates(
+        [(gender, 1.0) for gender in extracted_data.heuristics_genders], candidates)
+    _add_without_duplicates([(common_mentionings, 0.9)
+                             for common_mentionings in extracted_data.heuristics_variety_common_mentionings], candidates)
     # a special code should match exactly
-    _add_without_duplicates([(special_code, 1.0) for special_code in extracted_data.heuristics_special_codes], candidates)
-    _add_without_duplicates([(capitalized_word, 0.75) for capitalized_word in extracted_data.heuristics_capitalized_words], candidates)
-    _add_without_duplicates([(location, 0.9) for location in extracted_data.heuristics_location_abbreviations], candidates)
+    _add_without_duplicates(
+        [(special_code, 1.0) for special_code in extracted_data.heuristics_special_codes], candidates)
+    _add_without_duplicates([(capitalized_word, 0.75)
+                             for capitalized_word in extracted_data.heuristics_capitalized_words], candidates)
+    _add_without_duplicates(
+        [(location, 0.9) for location in extracted_data.heuristics_location_abbreviations], candidates)
 
     # important: in addition to all the handcrafted features, also take all values from the NER which aren't known dates/numbers/prices
-    _add_without_duplicates([(ner_value, 0.75) for ner_value in extracted_data.ner_remaining], candidates)
+    _add_without_duplicates(
+        [(ner_value, 0.75) for ner_value in extracted_data.ner_remaining], candidates)
 
     database_matches = _find_matches_in_database(db_value_finder, candidates)
 
@@ -96,12 +114,15 @@ def _find_matches_in_database(db_value_finder, potential_values):
     matches = []
     tic_toc = TicToc()
     tic_toc.tic()
-    print(f'Find potential candiates "{potential_values}" in database {db_value_finder.database}')
+    print(
+        f'Find potential candiates "{potential_values}" in database {db_value_finder.database}')
     try:
-        matching_db_values = db_value_finder.find_similar_values_in_database(potential_values)
+        matching_db_values = db_value_finder.find_similar_values_in_database(
+            potential_values)
         matches = list(map(lambda v: v[0], matching_db_values))
     except Exception as e:
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error executing a query by the database finder. Error: {e}")
+        print(
+            f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Error executing a query by the database finder. Error: {e}")
 
     tic_toc.toc()
     return matches
@@ -109,7 +130,8 @@ def _find_matches_in_database(db_value_finder, potential_values):
 
 def _add_without_duplicates(new_candidates, candidates):
     for value, tolerance in new_candidates:
-        existing_candidate = next(filter(lambda value_tolerance: value_tolerance[0] == value, candidates), None)
+        existing_candidate = next(
+            filter(lambda value_tolerance: value_tolerance[0] == value, candidates), None)
         if existing_candidate:
             existing_value, existing_tolerance = existing_candidate
             if existing_tolerance < tolerance:
@@ -216,7 +238,8 @@ def _is_value_equal(extracted_value, expected_value):
 
 def _get_or_create_value_finder(database):
     if database not in all_database_value_finder:
-        all_database_value_finder[database] = DatabaseValueFinder(DB_FOLDER, database, DB_SCHEMA)
+        all_database_value_finder[database] = DatabaseValueFinder(
+            DB_FOLDER, database, DB_SCHEMA)
     db_value_finder = all_database_value_finder[database]
     return db_value_finder
 
@@ -235,7 +258,8 @@ if __name__ == '__main__':
     with open(os.path.join(args.ner_data_path), 'r', encoding='utf-8') as json_file:
         ner_data = json.load(json_file)
 
-    assert len(data) == len(ner_data), 'Both, NER data and actual data (e.g. ner_train.json and preprocessed_train.json) need to have the same amount of rows!'
+    assert len(data) == len(
+        ner_data), 'Both, NER data and actual data (e.g. ner_train.json and preprocessed_train.json) need to have the same amount of rows!'
 
     # add both, the ner-extracted values and the actual values (extracted from the SQL-ground truth) to the data file.
     for row, ner_information in zip(data, ner_data):
