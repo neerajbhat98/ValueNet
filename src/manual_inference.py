@@ -4,7 +4,7 @@ import sqlite3
 from pprint import pprint
 
 import torch
-
+import json
 from config import read_arguments_manual_inference
 from intermediate_representation import semQL
 from intermediate_representation.sem2sql.sem2SQL import transform
@@ -48,8 +48,8 @@ def _tokenize_question(tokenizer, question):
 
 
 def _pre_process_values(row):
-    ner_results = remote_named_entity_recognition(row['question'])
-    row['ner_extracted_values'] = ner_results['entities']
+    # ner_results = remote_named_entity_recognition(row['question'])
+    # row['ner_extracted_values'] = ner_results['entities']
 
     extracted_values = pre_process(row)
 
@@ -132,48 +132,60 @@ if __name__ == '__main__':
     with open(os.path.join(args.conceptNet, 'english_IsA.pkl'), 'rb') as f:
         is_a_concept = pickle.load(f)
 
+    log = []
     while True:
-
+        dict = {}
         _print_banner()
-        question = input(colored(f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
+        question = input(colored(
+            f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
+        dict['question'] = question
 
-        try:
+        if(question == '`'):
+            with open('log_' + str(args.database) + '.json', 'w') as f:
+                json.dump(log, f)
+            break
 
-            row = {
-                'question': question,
-                'query': 'DUMMY',
-                'db_id': args.database,
-                'question_toks': _tokenize_question(tokenizer, question)
-            }
+        row = {
+            'question': question,
+            'query': 'DUMMY',
+            'db_id': args.database,
+            'question_toks': _tokenize_question(tokenizer, question)
+        }
 
-            print(colored(f"question has been tokenized to : { row['question_toks'] }", 'cyan', attrs=['bold']))
+        print(colored(
+            f"question has been tokenized to : { row['question_toks'] }", 'cyan', attrs=['bold']))
 
-            data, table = merge_data_with_schema(schemas_raw, [row])
+        data, table = merge_data_with_schema(schemas_raw, [row])
 
-            pre_processed_data = process_datas(data, related_to_concept, is_a_concept)
+        pre_processed_data = process_datas(
+            data, related_to_concept, is_a_concept)
 
-            pre_processed_with_values = _pre_process_values(pre_processed_data[0])
+        pre_processed_with_values = _pre_process_values(pre_processed_data[0])
 
-            print(f"we found the following potential values in the question: {row['values']}")
+        print(
+            f"we found the following potential values in the question: {row['values']}")
 
-            prediction, example = _inference_semql(pre_processed_with_values, schemas_dict, model)
+        prediction, example = _inference_semql(
+            pre_processed_with_values, schemas_dict, model)
 
-            print(f"Results from schema linking (question token types): {example.src_sent}")
-            print(f"Results from schema linking (column types): {example.col_hot_type}")
+        print(
+            f"Results from schema linking (question token types): {example.src_sent}")
+        print(
+            f"Results from schema linking (column types): {example.col_hot_type}")
 
-            print(colored(f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
-            print()
-            sql = _semql_to_sql(prediction, schemas_dict)
+        print(colored(
+            f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
+        dict['semQL'] = prediction['model_result']
+        print()
+        sql = _semql_to_sql(prediction, schemas_dict)
+        dict['sql'] = sql
+        print(colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
+        print()
+        result = _execute_query(sql, args.database_path)
+        dict['result'] = []
+        print(f"Executed on the database '{args.database}'. Results: ")
+        for row in result:
+            print(colored(row, 'green'))
+            dict['result'].append(row)
 
-            print(colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
-            print()
-            result = _execute_query(sql, args.database_path)
-
-            print(f"Executed on the database '{args.database}'. Results: ")
-            for row in result:
-                print(colored(row, 'green'))
-
-        except Exception as e:
-            print("Exception: " + str(e))
-
-        input(colored("Press [Enter] to continue with your next question.", 'red', attrs=['bold']))
+        log.append(dict)
