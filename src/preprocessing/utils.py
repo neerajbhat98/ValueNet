@@ -10,7 +10,6 @@
 """
 import os
 import json
-from pattern.text.en import lemma
 from nltk.stem import WordNetLemmatizer
 
 VALUE_FILTER = ['what', 'how', 'list', 'give', 'show', 'find', 'id', 'order', 'when']
@@ -18,6 +17,8 @@ AGG = ['average', 'sum', 'max', 'min', 'minimum', 'maximum', 'between']
 
 wordnet_lemmatizer = WordNetLemmatizer()
 
+def lemma(x):
+    wordnet_lemmatizer.lemmatize(x)
 
 def load_dataSets(args):
     with open(args.table_path, 'r', encoding='utf8') as f:
