@@ -48,23 +48,23 @@ def pre_process(entry):
     extracted_data.heuristics_location_abbreviations.extend(
         find_location_abbreviations(entry['question']))
 
-    for entity in entry['ner_extracted_values']:
-        # for all types see https://cloud.google.com/natural-language/docs/reference/rest/v1beta2/Entity#Type
-        # TODO: extend this pre-processing for e.g. ADDRESSES, PHONE_NUMBERS - see the link above.
-        if entity['type'] == 'NUMBER':
-            extracted_data.ner_numbers.append(_compose_number(entity))
-        elif entity['type'] == 'DATE':
-            extracted_data.ner_dates.extend(_compose_date(entity))
-        elif entity['type'] == 'PRICE':
-            extracted_data.ner_prices.append(_compose_price(entity))
-        else:
-            if len(entity['name'].split(' ')) == 1:
-                # just take the extracted value - without any adaptions
-                extracted_data.ner_remaining.append(entity['name'])
-            else:
-                # there are multiple words in this value - create combinations out of it.
-                extracted_data.ner_remaining.extend(
-                    _build_ngrams(entity['name']))
+    # for entity in entry['ner_extracted_values']:
+    #     # for all types see https://cloud.google.com/natural-language/docs/reference/rest/v1beta2/Entity#Type
+    #     # TODO: extend this pre-processing for e.g. ADDRESSES, PHONE_NUMBERS - see the link above.
+    #     if entity['type'] == 'NUMBER':
+    #         extracted_data.ner_numbers.append(_compose_number(entity))
+    #     elif entity['type'] == 'DATE':
+    #         extracted_data.ner_dates.extend(_compose_date(entity))
+    #     elif entity['type'] == 'PRICE':
+    #         extracted_data.ner_prices.append(_compose_price(entity))
+    #     else:
+    #         if len(entity['name'].split(' ')) == 1:
+    #             # just take the extracted value - without any adaptions
+    #             extracted_data.ner_remaining.append(entity['name'])
+    #         else:
+    #             # there are multiple words in this value - create combinations out of it.
+    #             extracted_data.ner_remaining.extend(
+    #                 _build_ngrams(entity['name']))
 
     return extracted_data
 
