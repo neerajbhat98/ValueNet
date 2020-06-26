@@ -18,7 +18,7 @@ AGG = ['average', 'sum', 'max', 'min', 'minimum', 'maximum', 'between']
 wordnet_lemmatizer = WordNetLemmatizer()
 
 def lemma(x):
-    wordnet_lemmatizer.lemmatize(x)
+    return wordnet_lemmatizer.lemmatize(x)
 
 def load_dataSets(args):
     with open(args.table_path, 'r', encoding='utf8') as f:
