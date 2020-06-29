@@ -106,6 +106,19 @@ V::::::V           V::::::V               l:::::l                               
         ''', 'blue'))
 
 
+def _remove_spaces(sentence):
+    s = sentence.strip().split()
+    s = " ".join(s)
+    return s
+
+def _find_nums(sentence):
+    nums = []
+    for word in sentence.split():
+        if word.isnumeric():
+            nums.append(word)
+    return nums
+
+
 if __name__ == '__main__':
     args = read_arguments_manual_inference()
 
@@ -137,6 +150,8 @@ if __name__ == '__main__':
         _print_banner()
         question = input(colored(
             f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
+        question = _remove_spaces(question)
+        nums = _find_nums(question)
         dict['question'] = question
         if(question == '`'):
             break
@@ -159,6 +174,10 @@ if __name__ == '__main__':
 
             pre_processed_with_values = _pre_process_values(
                 pre_processed_data[0])
+
+            for num in nums:
+                if num not in row['values']:
+                    row['values'].append(num)
 
             print(
                 f"we found the following potential values in the question: {row['values']}")
