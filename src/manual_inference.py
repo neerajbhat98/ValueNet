@@ -121,18 +121,18 @@ def _find_nums(sentence):
 
 if __name__ == '__main__':
     args = read_arguments_manual_inference()
-
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
-
     schemas_raw, schemas_dict = spider_utils.load_schema(args.data_dir)
 
     grammar = semQL.Grammar()
     model = IRNet(args, device, grammar)
     model.to(device)
-
+    print("loading start")
+    print(args.model_to_load)
+    print(args.database)
     # load the pre-trained parameters
-    model.load_state_dict(torch.load(args.model_to_load))
+    model.load_state_dict(torch.load(args.model_to_load, map_location=torch.device('cpu')))
     model.eval()
     print("Load pre-trained model from '{}'".format(args.model_to_load))
 
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     log = []
     while True:
         dict = {}
-        _print_banner()
+       # _print_banner()
         question = input(colored(
             f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
         question = _remove_spaces(question)
@@ -155,65 +155,63 @@ if __name__ == '__main__':
         dict['question'] = question
         if(question == '`'):
             break
-        try:
+        row = {
+            'question': question,
+            'query': 'DUMMY',
+            'db_id': args.database,
+            'question_toks': _tokenize_question(tokenizer, question)
+        }
 
-            row = {
-                'question': question,
-                'query': 'DUMMY',
-                'db_id': args.database,
-                'question_toks': _tokenize_question(tokenizer, question)
-            }
+        print(colored(
+            f"question has been tokenized to : { row['question_toks'] }", 'cyan', attrs=['bold']))
 
-            print(colored(
-                f"question has been tokenized to : { row['question_toks'] }", 'cyan', attrs=['bold']))
+        data, table = merge_data_with_schema(schemas_raw, [row])
 
-            data, table = merge_data_with_schema(schemas_raw, [row])
+        pre_processed_data = process_datas(
+            data, related_to_concept, is_a_concept)
 
-            pre_processed_data = process_datas(
-                data, related_to_concept, is_a_concept)
+        pre_processed_with_values = _pre_process_values(
+            pre_processed_data[0])
 
-            pre_processed_with_values = _pre_process_values(
-                pre_processed_data[0])
+        for num in nums:
+            if num not in row['values']:
+                row['values'].append(num)
 
-            for num in nums:
-                if num not in row['values']:
-                    row['values'].append(num)
+        print(
+            f"we found the following potential values in the question: {row['values']}")
 
-            print(
-                f"we found the following potential values in the question: {row['values']}")
+        prediction, example = _inference_semql(
+            pre_processed_with_values, schemas_dict, model)
 
-            prediction, example = _inference_semql(
-                pre_processed_with_values, schemas_dict, model)
+        print(
+            f"Results from schema linking (question token types): {example.src_sent}")
+        print(
+            f"Results from schema linking (column types): {example.col_hot_type}")
 
-            print(
-                f"Results from schema linking (question token types): {example.src_sent}")
-            print(
-                f"Results from schema linking (column types): {example.col_hot_type}")
+        print(colored(
+            f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
+        print()
+        dict['semQL'] = prediction['model_result']
 
-            print(colored(
-                f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
-            print()
-            dict['semQL'] = prediction['model_result']
+        sql = _semql_to_sql(prediction, schemas_dict)
 
-            sql = _semql_to_sql(prediction, schemas_dict)
+        print(
+            colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
+        print()
+        dict['sql'] = sql
+        result = _execute_query(sql, args.database_path)
+        dict['result'] = result
+        print(f"Executed on the database '{args.database}'. Results: ")
+        for row in result:
+            print(colored(row, 'green'))
 
-            print(
-                colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
-            print()
-            dict['sql'] = sql
-            result = _execute_query(sql, args.database_path)
-            dict['result'] = result
-            print(f"Executed on the database '{args.database}'. Results: ")
-            for row in result:
-                print(colored(row, 'green'))
+        log.append(dict)
 
-            log.append(dict)
+    #     except Exception as e:
+    #         print("Exception: " + str(e))
 
-        except Exception as e:
-            print("Exception: " + str(e))
+    #     input(colored(
+    #         "Press [Enter] to continue with your next question.", 'red', attrs=['bold']))
 
-        input(colored(
-            "Press [Enter] to continue with your next question.", 'red', attrs=['bold']))
-
-    with open('log_' + str(args.database) + '.json', 'w') as f:
-        json.dump(log, f, indent=4)
+    # with open('log_' + str(args.database) + '.json', 'w') as f:
+    #     json.dump(log, f, indent=4)

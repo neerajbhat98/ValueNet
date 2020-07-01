@@ -122,16 +122,15 @@ def read_arguments_evaluation():
 
 def read_arguments_manual_inference():
     parser = argparse.ArgumentParser(description="Run manual inference with following arguments")
-
     # manual_inference
-    parser.add_argument('--model_to_load', type=str)
-    parser.add_argument('--database', default='concert_singer', type=str)
+    parser.add_argument('--model_to_load',default = "saved_model/best_model.pt",type=str)
+    parser.add_argument('--database', default='dealPlatform', type=str)
 
     # general configuration
     parser.add_argument('--seed', default=90, type=int)
     parser.add_argument('--data_set', default='spider', type=str)
     parser.add_argument('--batch_size', default=1, type=int)
-    parser.add_argument('--cuda', default=True, action='store_true')
+    parser.add_argument('--cuda', default=False, action='store_true')
     parser.add_argument('--conceptNet', default="data/spider/conceptNet", type=str)
 
     # encoder configuration
@@ -158,7 +157,7 @@ def read_arguments_manual_inference():
     args = parser.parse_args()
 
     args.data_dir = os.path.join(Config.DATA_PREFIX, args.data_set)
-    args.database_path = os.path.join(args.data_dir, "original", "database", args.database, args.database + ".sqlite")
+    args.database_path = os.path.join(args.data_dir, "original", "database", args.database, args.database + ".db")
 
     print("*** parsed configuration from command line and combine with constants ***")
 

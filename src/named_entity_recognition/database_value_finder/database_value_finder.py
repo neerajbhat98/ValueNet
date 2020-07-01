@@ -4,7 +4,7 @@ import sqlite3
 from functools import reduce
 from pathlib import Path
 import pytictoc
-
+import os
 from more_itertools import flatten
 from textdistance import DamerauLevenshtein
 import multiprocessing
@@ -17,7 +17,7 @@ class DatabaseValueFinder:
     def __init__(self, database_folder, database_name, database_schema_path, max_results=10):
         self.database = database_name
         self.database_schema = self._load_schema(database_schema_path, database_name)
-        self.database_path = Path(database_folder, database_name, database_name + '.sqlite')
+        self.database_path = Path(database_folder, database_name, database_name + '.db')
         self.similarity_algorithm = DamerauLevenshtein()
         self.max_results = max_results
 
@@ -119,6 +119,9 @@ class DatabaseValueFinder:
 
     @staticmethod
     def _load_schema(database_schema_path, database_name):
+        print(database_schema_path)
+        if not ('src' in os.listdir()):
+            database_schema_path = "../"+database_schema_path
         with open(database_schema_path, 'r', encoding='utf-8') as json_file:
             schemas = json.load(json_file)
             for db_schema in schemas:
