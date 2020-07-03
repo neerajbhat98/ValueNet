@@ -124,7 +124,6 @@ if __name__ == '__main__':
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
     schemas_raw, schemas_dict = spider_utils.load_schema(args.data_dir)
-
     grammar = semQL.Grammar()
     model = IRNet(args, device, grammar)
     model.to(device)
@@ -132,7 +131,8 @@ if __name__ == '__main__':
     print(args.model_to_load)
     print(args.database)
     # load the pre-trained parameters
-    model.load_state_dict(torch.load(args.model_to_load, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(args.
+                                     model_to_load, map_location=torch.device('cpu')))
     model.eval()
     print("Load pre-trained model from '{}'".format(args.model_to_load))
 
