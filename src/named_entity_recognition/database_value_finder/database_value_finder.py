@@ -28,11 +28,11 @@ class DatabaseValueFinder:
 
         conn = sqlite3.connect(str(self.database_path.resolve()))
         cursor = conn.cursor()
-
+        print("Potential Values before entering whole db scanning : " ,potential_values)
         for table, columns in table_text_column_mapping.items():
             if columns:
                 query = self._assemble_query(columns, table)
-
+                print(query)
                 data = self.fetch_data(query, cursor)
 
                 # The overhead of parallelization only helps after a certain size of data. Example: a table with ~ 300k entries and 4 columns takes ~20s with a single core.
@@ -58,8 +58,8 @@ class DatabaseValueFinder:
 
     def _find_matches_by_similarity(self, data, column_idx, potential_values):
         matching_value_in_database = []
+        print("Potential Values before entering similarity matching: " ,potential_values)
         potential_values_found = []
-
         for row in data:
             cell_value = row[column_idx]
             # avoid comparing None values

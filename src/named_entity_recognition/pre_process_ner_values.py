@@ -76,16 +76,21 @@ def match_values_in_database(db_id: str, extracted_data: NerExtractionData):
     # Remember: 1.0 is looking for exact matches only. Also remember: we do lower-case only comparison, so 'Male' and 'male' will match with 1.0
     candidates = []
     # With values in quote we are a bit tolerant. Important: we keep this values anyway, as the are often used in fuzzy LIKE searches.
+  #  print("Candidates before quote mentionings : ", candidates)
     _add_without_duplicates(
         [(quote, 0.9) for quote in extracted_data.heuristic_values_in_quote], candidates)
     # Gender values we only want exact matches.
+  #  print("Candidates before gender mentionings : ", candidates)
     _add_without_duplicates(
         [(gender, 1.0) for gender in extracted_data.heuristics_genders], candidates)
+ #   print("Candidates before common mentionings : ", candidates)    
     _add_without_duplicates([(common_mentionings, 0.9)
                              for common_mentionings in extracted_data.heuristics_variety_common_mentionings], candidates)
     # a special code should match exactly
+  #  print("Candidates before special codes mentionings : ", candidates) 
     _add_without_duplicates(
         [(special_code, 1.0) for special_code in extracted_data.heuristics_special_codes], candidates)
+  #  print("Candidates before capitalized mentionings : ", candidates)
     _add_without_duplicates([(capitalized_word, 0.75)
                              for capitalized_word in extracted_data.heuristics_capitalized_words], candidates)
     _add_without_duplicates(
@@ -96,7 +101,8 @@ def match_values_in_database(db_id: str, extracted_data: NerExtractionData):
         [(ner_value, 0.75) for ner_value in extracted_data.ner_remaining], candidates)
 
     database_matches = _find_matches_in_database(db_value_finder, candidates)
-
+    print(database_matches)
+    print("Final candidates: ",candidates)
     # Here we put all the values to one happy list together: the ones we matched via database and the ones we got directly out of the question.
     # The 'set' is to remove duplicates.
     return list(set(extracted_data.heuristic_values_in_quote +  # we put in values in quote a second time as those values are often fuzzy strings.
@@ -120,6 +126,7 @@ def _find_matches_in_database(db_value_finder, potential_values):
     try:
         matching_db_values = db_value_finder.find_similar_values_in_database(
             potential_values)
+        print(matching_db_values)
         matches = list(map(lambda v: v[0], matching_db_values))
     except Exception as e:
         print(
