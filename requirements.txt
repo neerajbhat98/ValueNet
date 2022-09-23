@@ -59,7 +59,7 @@ plac==1.1.3
 portend==2.6
 preshed==3.0.2
 promise==2.3
-protobuf==3.11.3
+protobuf==3.18.3
 psutil==5.7.0
 pyasn1-modules==0.2.8
 pyasn1==0.4.8
